@@ -3,11 +3,14 @@
 import argparse
 import json
 import string
+from nltk.stem import PorterStemmer
 
 
 def main() -> None:
     with open('./data/movies.json', 'r') as f:
         movies = json.load(f)
+    with open('./data/stopwords.txt', 'r') as f:
+        stopwords = set(line.strip().lower() for line in f if line.strip())
     
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -22,12 +25,13 @@ def main() -> None:
             # print the search query here
             print(f"Searching for: {args.query}")
             translator = str.maketrans('', '', string.punctuation)
+            stemmer = PorterStemmer()
             query_clean = args.query.lower().translate(translator)
-            query_tokens = [t for t in query_clean.split() if t]
+            query_tokens = [stemmer.stem(t) for t in query_clean.split() if t and t not in stopwords]
             results = []
             for movie in movies["movies"]:
                 title_clean = movie["title"].lower().translate(translator)
-                title_tokens = [t for t in title_clean.split() if t]
+                title_tokens = [stemmer.stem(t) for t in title_clean.split() if t and t not in stopwords]
                 if any(q in t for q in query_tokens for t in title_tokens):
                     results.append(movie)
             results = sorted(results, key=lambda m: m['id'])[:5]
