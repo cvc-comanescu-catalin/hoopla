@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import string
 
 
 def main() -> None:
@@ -20,9 +21,14 @@ def main() -> None:
         case "search":
             # print the search query here
             print(f"Searching for: {args.query}")
+            translator = str.maketrans('', '', string.punctuation)
+            query_clean = args.query.lower().translate(translator)
+            query_tokens = [t for t in query_clean.split() if t]
             results = []
             for movie in movies["movies"]:
-                if args.query.lower() in movie["title"].lower():
+                title_clean = movie["title"].lower().translate(translator)
+                title_tokens = [t for t in title_clean.split() if t]
+                if any(q in t for q in query_tokens for t in title_tokens):
                     results.append(movie)
             results = sorted(results, key=lambda m: m['id'])[:5]
             if results:
