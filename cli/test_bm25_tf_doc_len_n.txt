@@ -1,0 +1,44 @@
+╭──────────────────────────────────────────────────────────────────╮
+│ ?  Running: uv run cli/keyword_search_cli.py bm25tf 1 anbuselvan │
+╰┬─────────────────────────────────────────────────────────────────╯
+ ├─  ?  Expect exit code 0
+ ├─  ?  Expect stdout to contain all of:
+ │       - '2.35'                       
+
+ > Command exit code: 0
+ > Command stdout:
+
+BM25 TF score of 'anbuselvan' in document '1': 2.35
+╭──────────────────────────────────────────────────────────────╮
+│ ?  Running: uv run cli/keyword_search_cli.py bm25tf 1 police │
+╰┬─────────────────────────────────────────────────────────────╯
+ ├─  ?  Expect exit code 0
+ ├─  ?  Expect stdout to contain all of:
+ │       - '2.09'                       
+
+ > Command exit code: 0
+ > Command stdout:
+
+BM25 TF score of 'police' in document '1': 2.09
+╭────────────────────────────────────────────────────────────╮
+│ ?  Running: uv run cli/keyword_search_cli.py bm25tf 1 maya │
+╰┬───────────────────────────────────────────────────────────╯
+ ├─  ?  Expect exit code 0
+ ├─  ?  Expect stdout to contain all of:
+ │       - '2.24'                       
+
+ > Command exit code: 0
+ > Command stdout:
+
+BM25 TF score of 'maya' in document '1': 2.24
+╭──────────────────────────────────────────────────────────────╮
+│ ?  Running: uv run cli/keyword_search_cli.py bm25tf 1 cheese │
+╰┬─────────────────────────────────────────────────────────────╯
+ ├─  ?  Expect exit code 0
+ ├─  ?  Expect stdout to contain all of:
+ │       - '0.00'                       
+
+ > Command exit code: 0
+ > Command stdout:
+
+BM25 TF score of 'cheese' in document '1': 0.00

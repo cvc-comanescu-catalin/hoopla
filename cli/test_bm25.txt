@@ -1,0 +1,33 @@
+╭──────────────────────────────────────────────────────────────╮
+│ ?  Running: uv run cli/keyword_search_cli.py bm25idf grizzly │
+╰┬─────────────────────────────────────────────────────────────╯
+ ├─  ?  Expect exit code 0
+ ├─  ?  Expect stdout to contain all of:
+ │       - '5.55'                       
+
+ > Command exit code: 0
+ > Command stdout:
+
+BM25 IDF score of 'grizzly': 5.55
+╭────────────────────────────────────────────────────────────╮
+│ ?  Running: uv run cli/keyword_search_cli.py bm25idf actor │
+╰┬───────────────────────────────────────────────────────────╯
+ ├─  ?  Expect exit code 0
+ ├─  ?  Expect stdout to contain all of:
+ │       - '3.29'                       
+
+ > Command exit code: 0
+ > Command stdout:
+
+BM25 IDF score of 'actor': 3.29
+╭─────────────────────────────────────────────────────────╮
+│ ?  Running: uv run cli/keyword_search_cli.py bm25idf go │
+╰┬────────────────────────────────────────────────────────╯
+ ├─  ?  Expect exit code 0
+ ├─  ?  Expect stdout to contain all of:
+ │       - '0.60'                       
+
+ > Command exit code: 0
+ > Command stdout:
+
+BM25 IDF score of 'go': 0.60

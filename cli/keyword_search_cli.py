@@ -9,6 +9,9 @@ import string
 from collections import Counter
 from nltk.stem import PorterStemmer
 
+BM25_K1 = 1.5
+
+BM25_B = 0.75
 
 class InvertedIndex:
     def __init__(self, stopwords=None):
@@ -20,12 +23,14 @@ class InvertedIndex:
         self.index = {}
         self.docmap = {}
         self.term_frequencies = {}
+        self.doc_lengths = {}
 
     def __add_document(self, doc_id, text):
         translator = str.maketrans('', '', string.punctuation)
         stemmer = PorterStemmer()
         clean_text = text.lower().translate(translator)
         tokens = [stemmer.stem(t) for t in clean_text.split() if t and t not in self.stopwords]
+        self.doc_lengths[doc_id] = len(tokens)
         if doc_id not in self.term_frequencies:
             self.term_frequencies[doc_id] = Counter()
         for token in tokens:
@@ -53,6 +58,8 @@ class InvertedIndex:
             pickle.dump(self.docmap, f)
         with open('cache/term_frequencies.pkl', 'wb') as f:
             pickle.dump(self.term_frequencies, f)
+        with open('cache/doc_lengths.pkl', 'wb') as f:
+            pickle.dump(self.doc_lengths, f)
 
     def load(self):
         if not (os.path.exists('cache/index.pkl') and os.path.exists('cache/docmap.pkl') and os.path.exists('cache/term_frequencies.pkl')):
@@ -63,6 +70,11 @@ class InvertedIndex:
             self.docmap = pickle.load(f)
         with open('cache/term_frequencies.pkl', 'rb') as f:
             self.term_frequencies = pickle.load(f)
+        try:
+            with open('cache/doc_lengths.pkl', 'rb') as f:
+                self.doc_lengths = pickle.load(f)
+        except FileNotFoundError:
+            self.doc_lengths = {}
 
     def get_tf(self, doc_id, term):
         translator = str.maketrans('', '', string.punctuation)
@@ -73,6 +85,45 @@ class InvertedIndex:
             raise ValueError("Term must be a single token after processing")
         stemmed_term = tokens[0]
         return self.term_frequencies.get(doc_id, Counter()).get(stemmed_term, 0)
+
+    def get_bm25_idf(self, term):
+        translator = str.maketrans('', '', string.punctuation)
+        stemmer = PorterStemmer()
+        clean_term = term.lower().translate(translator)
+        tokens = [stemmer.stem(t) for t in clean_term.split() if t and t not in self.stopwords]
+        if len(tokens) != 1:
+            raise ValueError("Term must be a single token after processing")
+        stemmed_term = tokens[0]
+        df = len(self.index.get(stemmed_term, set()))
+        N = len(self.docmap)
+        bm25_idf = math.log((N - df + 0.5) / (df + 0.5) + 1)
+        return bm25_idf
+
+    def __get_avg_doc_length(self) -> float:
+        if not self.doc_lengths:
+            return 0.0
+        return sum(self.doc_lengths.values()) / len(self.doc_lengths)
+
+    def get_bm25_tf(self, doc_id: int, term: str, k1: float = BM25_K1, b: float = BM25_B) -> float:
+        tf = self.get_tf(doc_id, term)
+        doc_len = self.doc_lengths.get(doc_id, 0)
+        avg_dl = self.__get_avg_doc_length()
+        if avg_dl == 0:
+            return 0.0
+        normalization = 1 - b + b * (doc_len / avg_dl)
+        return (tf * (k1 + 1)) / (tf + k1 * normalization)
+
+
+def bm25_idf_command(term):
+    index = InvertedIndex()
+    index.load()
+    return index.get_bm25_idf(term)
+
+
+def bm25_tf_command(doc_id, term, k1=BM25_K1, b=BM25_B):
+    index = InvertedIndex()
+    index.load()
+    return index.get_bm25_tf(doc_id, term, k1, b)
 
 
 def main() -> None:
@@ -93,6 +144,14 @@ def main() -> None:
     tfidf_parser = subparsers.add_parser("tfidf", help="Calculate TF-IDF for a document and term")
     tfidf_parser.add_argument("doc_id", type=int, help="Document ID")
     tfidf_parser.add_argument("term", type=str, help="Term")
+    bm25_idf_parser = subparsers.add_parser('bm25idf', help="Get BM25 IDF score for a given term")
+    bm25_idf_parser.add_argument("term", type=str, help="Term to get BM25 IDF score for")
+
+    bm25_tf_parser = subparsers.add_parser("bm25tf", help="Get BM25 TF score for a given document ID and term")
+    bm25_tf_parser.add_argument("doc_id", type=int, help="Document ID")
+    bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
+    bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
+    bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
 
     args = parser.parse_args()
 
@@ -102,11 +161,6 @@ def main() -> None:
         index = InvertedIndex()
         index.build(movies)
         index.save()
-        merida_docs = index.get_documents('merida')
-        if merida_docs:
-            print(f"First document for token 'merida' = {merida_docs[0]}")
-        else:
-            print("No documents for 'merida'")
     elif args.command == "search":
         print(f"Searching for: {args.query}")
         index = InvertedIndex()
@@ -193,6 +247,22 @@ def main() -> None:
         idf = math.log((doc_count + 1) / (term_doc_count + 1))
         tf_idf = tf * idf
         print(f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}")
+    elif args.command == "bm25idf":
+        try:
+            bm25idf = bm25_idf_command(args.term)
+            print(f"BM25 IDF score of '{args.term}': {bm25idf:.2f}")
+        except FileNotFoundError:
+            print("Index not built. Please run 'build' command first.")
+        except ValueError as e:
+            print(str(e))
+    elif args.command == "bm25tf":
+        try:
+            bm25tf = bm25_tf_command(args.doc_id, args.term, args.k1, args.b)
+            print(f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25tf:.2f}")
+        except FileNotFoundError:
+            print("Index not built. Please run 'build' command first.")
+        except ValueError as e:
+            print(str(e))
     else:
         parser.print_help()
 
