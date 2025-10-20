@@ -113,6 +113,31 @@ class InvertedIndex:
         normalization = 1 - b + b * (doc_len / avg_dl)
         return (tf * (k1 + 1)) / (tf + k1 * normalization)
 
+    def bm25(self, doc_id, term):
+        bm25_tf = self.get_bm25_tf(doc_id, term)
+        bm25_idf = self.get_bm25_idf(term)
+        return bm25_tf * bm25_idf
+
+    def bm25_search(self, query, limit):
+        translator = str.maketrans('', '', string.punctuation)
+        stemmer = PorterStemmer()
+        query_clean = query.lower().translate(translator)
+        query_tokens = [stemmer.stem(t) for t in query_clean.split() if t and t not in self.stopwords]
+        if not query_tokens:
+            return []
+        scores = {}
+        for doc_id in self.docmap:
+            total_score = 0.0
+            for token in query_tokens:
+                try:
+                    score = self.bm25(doc_id, token)
+                    total_score += score
+                except ValueError:
+                    pass
+            scores[doc_id] = total_score
+        sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        return [(doc_id, score) for doc_id, score in sorted_docs[:limit]]
+
 
 def bm25_idf_command(term):
     index = InvertedIndex()
@@ -152,6 +177,10 @@ def main() -> None:
     bm25_tf_parser.add_argument("term", type=str, help="Term to get BM25 TF score for")
     bm25_tf_parser.add_argument("k1", type=float, nargs='?', default=BM25_K1, help="Tunable BM25 K1 parameter")
     bm25_tf_parser.add_argument("b", type=float, nargs='?', default=BM25_B, help="Tunable BM25 b parameter")
+
+    bm25search_parser = subparsers.add_parser("bm25search", help="Search movies using full BM25 scoring")
+    bm25search_parser.add_argument("query", type=str, help="Search query")
+    bm25search_parser.add_argument("--limit", type=int, default=5, help="Number of results to return")
 
     args = parser.parse_args()
 
@@ -263,6 +292,20 @@ def main() -> None:
             print("Index not built. Please run 'build' command first.")
         except ValueError as e:
             print(str(e))
+    elif args.command == "bm25search":
+        index = InvertedIndex()
+        try:
+            index.load()
+        except FileNotFoundError:
+            print("Index not built. Please run 'build' command first.")
+            return
+        results = index.bm25_search(args.query, args.limit)
+        if results:
+            for i, (doc_id, score) in enumerate(results, start=1):
+                movie = index.docmap[doc_id]
+                print(f"{i}. ({doc_id}) {movie['title']} - Score: {score:.2f}")
+        else:
+            print("No movies found.")
     else:
         parser.print_help()
 

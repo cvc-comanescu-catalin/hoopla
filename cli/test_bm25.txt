@@ -1,33 +1,40 @@
-╭──────────────────────────────────────────────────────────────╮
-│ ?  Running: uv run cli/keyword_search_cli.py bm25idf grizzly │
-╰┬─────────────────────────────────────────────────────────────╯
+╭────────────────────────────────────────────────────────────────────────╮
+│ Running: uv run cli/keyword_search_cli.py bm25search "space adventure" │
+╰┬───────────────────────────────────────────────────────────────────────╯
  ├─  ?  Expect exit code 0
- ├─  ?  Expect stdout to contain all of:
- │       - '5.55'                       
+ ├─  ?  Expect stdout to contain all of:           
+ │       - 'Space Ace'                             
+ │       - '10.65'                                 
+ │       - 'The Adventures of the Galaxy Rangers'  
+ │       - '9.53'                                  
+ │       - 'Titanfall'                             
+ │       - '9.12'                                  
 
  > Command exit code: 0
  > Command stdout:
 
-BM25 IDF score of 'grizzly': 5.55
-╭────────────────────────────────────────────────────────────╮
-│ ?  Running: uv run cli/keyword_search_cli.py bm25idf actor │
-╰┬───────────────────────────────────────────────────────────╯
+1. (1763) Space Ace - Score: 10.65
+2. (841) The Adventures of the Galaxy Rangers - Score: 9.53
+3. (4946) Titanfall - Score: 9.12
+4. (4430) House II: The Second Story - Score: 7.27
+5. (3216) Les ma\u00eetres du temps - Score: 6.85
+╭────────────────────────────────────────────────────────────────────────╮
+│ Running: uv run cli/keyword_search_cli.py bm25search "animated family" │
+╰┬───────────────────────────────────────────────────────────────────────╯
  ├─  ?  Expect exit code 0
  ├─  ?  Expect stdout to contain all of:
- │       - '3.29'                       
+ │       - 'Gakuen Alice'               
+ │       - '7.35'                       
+ │       - 'Day of the Animals'         
+ │       - '7.14'                       
+ │       - 'Fantastic Mr. Fox'          
+ │       - '6.91'                       
 
  > Command exit code: 0
  > Command stdout:
 
-BM25 IDF score of 'actor': 3.29
-╭─────────────────────────────────────────────────────────╮
-│ ?  Running: uv run cli/keyword_search_cli.py bm25idf go │
-╰┬────────────────────────────────────────────────────────╯
- ├─  ?  Expect exit code 0
- ├─  ?  Expect stdout to contain all of:
- │       - '0.60'                       
-
- > Command exit code: 0
- > Command stdout:
-
-BM25 IDF score of 'go': 0.60
+1. (2929) Gakuen Alice - Score: 7.35
+2. (2275) Day of the Animals - Score: 7.14
+3. (1907) Fantastic Mr. Fox - Score: 6.91
+4. (1125) The Jungle Book - Score: 6.78
+5. (2665) Sing - Score: 6.74
